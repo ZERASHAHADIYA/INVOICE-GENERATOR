@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .form-section {
+            margin-bottom: 20px;
+        }
+
+        .form-section h2 {
+            margin-bottom: 15px;
+            color: #444;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .items-list {
+            margin-bottom: 20px;
+        }
+
+        .item-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: end;
+        }
+
+        button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-add {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+
+        .btn-generate {
+            background-color: #2196F3;
+            color: white;
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+
+        /* Invoice Styles */
+        .invoice {
+            display: none;
+            padding: 20px;
+        }
+
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        .company-details, .customer-details {
+            flex: 1;
+        }
+
+        .invoice-items {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .invoice-items th, .invoice-items td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        .invoice-items th {
+            background-color: #f8f9fa;
+        }
+
+        .totals {
+            float: right;
+            width: 300px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .invoice-actions {
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        @media print {
+            .form-container {
+                display: none;
+            }
+            .invoice {
+                display: block;
+            }
+            .invoice-actions {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Form Container -->
+        <div class="form-container">
+            <h1>Invoice Generator</h1>
+            <form id="invoiceForm">
+                <!-- Customer Information -->
+                <div class="form-section">
+                    <h2>Customer Information</h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="customerName">Customer Name</label>
+                            <input type="text" id="customerName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="customerEmail">Email</label>
+                            <input type="email" id="customerEmail" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="customerPhone">Phone</label>
+                            <input type="tel" id="customerPhone" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="customerAddress">Address</label>
+                            <input type="text" id="customerAddress" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Items Section -->
+                <div class="form-section">
+                    <h2>Items</h2>
+                    <div id="itemsList" class="items-list">
+                        <div class="item-row">
+                            <div class="form-group">
+                                <label>Description</label>
+                                <input type="text" class="item-description" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Quantity</label>
+                                <input type="number" class="item-quantity" min="1" step="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Price</label>
+                                <input type="number" class="item-price" min="0" step="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Tax (%)</label>
+                                <input type="number" class="item-tax" min="0" max="100" value="0" required>
+                            </div>
+                            <button type="button" class="btn-remove" onclick="removeItem(this)">Remove</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-add" onclick="addItem()">Add Item</button>
+                </div>
+
+                <button type="submit" class="btn-generate">Generate Invoice</button>
+            </form>
+        </div>
+
+        <!-- Invoice Display -->
+        <div class="invoice" id="invoice">
+            <div class="invoice-header">
+                <div class="company-details">
+                    <h2>SOKKAI-THE CLOTHING BRAND</h2>
+                    <p>7,ABC STREET</p>
+                    <p>Business City, 12345</p>
+                    <p>Phone: 9994523620</p>
+                </div>
+                <div class="customer-details" id="invoiceCustomerDetails">
+                </div>
+            </div>
+
+            <table class="invoice-items">
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Tax</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="invoiceItemsList">
+                    
+                </tbody>
+            </table>
+
+            <div class="totals" id="invoiceTotals">
+                
+            </div>
+
+            <div class="invoice-actions">
+                <button onclick="window.print()" class="btn-generate">Print Invoice</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add new item row
+        function addItem() {
+            const itemsList = document.getElementById('itemsList');
+            const newItem = document.createElement('div');
+            newItem.className = 'item-row';
+            newItem.innerHTML = `
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" class="item-description" required>
+                </div>
+                <div class="form-group">
+                    <label>Quantity</label>
+                    <input type="number" class="item-quantity" min="1" value="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Price ($)</label>
+                    <input type="number" class="item-price" min="0" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Tax (%)</label>
+                    <input type="number" class="item-tax" min="0" max="100" value="0" required>
+                </div>
+                <button type="button" class="btn-remove" onclick="removeItem(this)">Remove</button>
+            `;
+            itemsList.appendChild(newItem);
+        }
+
+        // Calculate totals
+        function calculateTotals(items) {
+            let subtotal = 0;
+            let totalTax = 0;
+
+            items.forEach(item => {
+                const itemTotal = item.quantity * item.price;
+                const itemTax = itemTotal * (item.tax / 100);
+                subtotal += itemTotal;
+                totalTax += itemTax;
+            });
+
+            const total = subtotal + totalTax;
+            return { subtotal, totalTax, total };
+        }
+
+        // Generate invoice
+        document.getElementById('invoiceForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Get customer details
+            const customerDetails = {
+                name: document.getElementById('customerName').value,
+                email: document.getElementById('customerEmail').value,
+                phone: document.getElementById('customerPhone').value,
+                address: document.getElementById('customerAddress').value
+            };
+
+            // Get items
+            const itemRows = document.querySelectorAll('.item-row');
+            const items = Array.from(itemRows).map(row => ({
+                description: row.querySelector('.item-description').value,
+                quantity: parseFloat(row.querySelector('.item-quantity').value),
+                price: parseFloat(row.querySelector('.item-price').value),
+                tax: parseFloat(row.querySelector('.item-tax').value)
+            }));
+
+            // Update customer details in invoice
+            const customerDetailsHtml = `
+                <h2>Bill To:</h2>
+                <p>${customerDetails.name}</p>
+                <p>${customerDetails.address}</p>
+                <p>Email: ${customerDetails.email}</p>
+                <p>Phone: ${customerDetails.phone}</p>
+            `;
+            document.getElementById('invoiceCustomerDetails').innerHTML = customerDetailsHtml;
+
+            // Update items in invoice
+            const itemsHtml = items.map(item => `
+                <tr>
+                    <td>${item.description}</td>
+                    <td>${item.quantity}</td>
+                    <td>$${item.price.toFixed(2)}</td>
+                    <td>${item.tax}%</td>
+                    <td>$${(item.quantity * item.price * (1 + item.tax/100)).toFixed(2)}</td>
+                </tr>
+            `).join('');
+            document.getElementById('invoiceItemsList').innerHTML = itemsHtml;
+
+            // Update totals
+            const totals = calculateTotals(items);
+            const totalsHtml = `
+                <div class="total-row">
+                    <span>Subtotal:</span>
+                    <span>$${totals.subtotal.toFixed(2)}</span>
+                </div>
+                <div class="total-row">
+                    <span>Tax:</span>
+                    <span>$${totals.totalTax.toFixed(2)}</span>
+                </div>
+                <div class="total-row">
+                    <strong>Total:</strong>
+                    <strong>$${totals.total.toFixed(2)}</strong>
+                </div>
+            `;
+            document.getElementById('invoiceTotals').innerHTML = totalsHtml;
+
+            // Show invoice
+            document.querySelector('.form-container').style.display = 'none';
+            document.getElementById('invoice').style.display = 'block';
+        });
+    </script>
+</body>
+</html>
